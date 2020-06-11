@@ -19,12 +19,10 @@ class Observer {
 
     defineReactive(obj, key, value) {
         const dep = new Dep()
-        console.log(key, value)
         Object.defineProperty(obj, key, {
             enumerable: true,
             configurable: true,
             get() {
-                console.log(key, value)
                 if(Dep.target) {
                     dep.depend()
                 }

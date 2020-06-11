@@ -22,5 +22,8 @@
     "htmlparser2": "^4.1.0",
     "parcel-bundler": "^1.12.4",
     "snabbdom": "^0.7.4"
+  },
+  "dependencies": {
+    
   }
 }

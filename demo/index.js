@@ -2,7 +2,7 @@ import Wue from '../src/wue.js'
 
 new Wue({
     el: '#app',
-    data: { 
+    data: {
         name: 'basketball',
         number: 0
     },

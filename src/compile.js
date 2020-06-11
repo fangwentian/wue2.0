@@ -1,88 +1,136 @@
-import { Directive } from './directives'
+const htmlparser2 = require("htmlparser2");
+const h = require('snabbdom/h').default;
 
 const onRE = /^w-on:|^@/
-const modelRE = /^w-model/
-const textRE = /^w-text/
 const wueAttrRE = /^w-([^:]+)(?:$|:(.*)$)/
-const directives = []
 
 export default function(Wue) {
     Wue.prototype._compile = function(el, options) {
-        // 递归节点，遍历属性，搜集directives描述对象
-        if(el.hasChildNodes()) {
-            compileNode(el)
-            compileNodeList(el.childNodes)
-        } else {
-            compileNode(el)
-        }
+        const template = getTemplate(el)
+        const ast = parse(template, options)
+        console.log(ast)
 
-        // 遍历directives描述对象，创建new Directive实例
-        directives.forEach((dirDesc) => {
-            this._directives.push(new Directive(dirDesc, this))
-        })
+        const code = generate(ast)
+        console.log(code)
 
-        // 遍历_directives, 调用directive的bind方法
-        this._directives.forEach((dir) => {
-            dir.bind()
-        })
-    }
-}
-
-const compileNode = (node) => {
-    compileDirectives(node, node.attributes)
-}
-
-const compileNodeList = (nodeList) => {
-    nodeList.forEach((node) => {
-        compileNode(node)
-        if(node.hasChildNodes()) {
-            compileNodeList(node.childNodes)
-        }
-    })
-}
-
-const compileDirectives = (node, attributes) => {
-    if(!attributes) {
-        return
-    }
-    
-    attributes = Array.from(attributes)
-    if(!attributes || !attributes.length) {
-        return
+        const renderFn = getFunction(code)
+        return renderFn
     }
 
-    attributes.forEach((attr) => {
-        const { name, value } = attr
-        if(wueAttrRE.test(name)) {
+    Wue.prototype._h = h
 
-            if(onRE.test(name)) {
-                directives.push({
-                    node,
-                    name: 'on',
-                    arg: name.replace(onRE, ''),
-                    value: value,
-                    rawName: name,
-                    rawValue: value
+}
+
+const getTemplate = (el) => {
+    return el.outerHTML.trim()
+}
+
+const getFunction = (string) => {
+    return new Function(string)
+}
+
+const parse = (template, options) => {
+    let result = []
+    let level = -1
+    let arr = []
+
+    const parser = new htmlparser2.Parser(
+        {
+            onopentag(name, attrs) {
+                level++
+                const directives = []
+                const events = []
+
+                // attrs只放置非指令
+                const filteredAttr = Object.keys(attrs).filter(key => !wueAttrRE.test(key)).reduce((res, cur) => {
+                    res[cur] = attrs[cur]
+                    return res
+                }, {})
+
+                // 搜集directives & events
+                Object.keys(attrs).forEach((key) => {
+                    const value = attrs[key]
+                    if(wueAttrRE.test(key)) {
+                        const type = key.split(':')[0].replace(/^w-/, '')
+                        const arg = key.split(':')[1]
+
+                        if(onRE.test(key)) {
+                            events.push({ [type]: value })
+                        } else {
+                            directives.push({
+                                rawName: key,
+                                name: type,
+                                value,
+                                arg
+                            })
+                        }
+                    }
                 })
-            } else if(modelRE.test(name)) {
-                directives.push({
-                    node,
-                    name: 'model',
-                    arg: name.replace(modelRE, ''),
-                    value: value,
-                    rawName: name,
-                    rawValue: value
-                })
-            } else if(textRE.test(name)) {
-                directives.push({
-                    node,
-                    name: 'text',
-                    arg: name.replace(textRE, ''),
-                    value: value,
-                    rawName: name,
-                    rawValue: value
-                })
-            }
-        }
-    })
+
+                let current = {
+                    tag: name,
+                    attrs: filteredAttr,
+                    children: [],
+                    directives,
+                    events
+                }
+
+                // 当是根目录的时候，放入result
+                if(level == 0) {
+                    result.push(current)
+                }
+
+                let parent = arr[level - 1]
+                if(parent) {
+                    parent.children.push(current)
+                }
+                arr[level] = current
+            },
+            ontext(text) {
+                level++
+                let current = {
+                    tag: 'text',
+                    text,
+                    children: []
+                }
+
+                let parent = arr[level - 1]
+                if(parent) {
+                    parent.children.push(current)
+                }
+                arr[level] = current
+                level--
+            },
+            onclosetag() {
+                level--
+            },
+        },
+        { decodeEntities: true }
+    );
+    parser.write(template);
+    parser.end();
+    return result
+}
+
+const generate = (ast) => {
+    return `with(this){${generateElements(ast)}}`
+}
+
+const generateElements = (elements) => {
+    return elements.map(ele => {
+        return `_h("${ele.tag}",${generateAttr(ele)},[${generateChildren(ele)}])`
+    }).join(',')
+}
+
+const generateAttr = (element) => {
+    const attrs = element.attrs
+    return `{"attrs":${attrs ? JSON.stringify(attrs) : '{}'}}`
+}
+
+const generateChildren = (element) => {
+    const children = element.children
+    if(children && children.length) {
+        return generateElements(children)
+    }
+    return ''
 }
