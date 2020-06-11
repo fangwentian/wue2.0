@@ -157,15 +157,31 @@ const generateElements = (elements) => {
 }
 
 const generateAttr = (element) => {
-    const { attrs, events } = element
-    const attrStr = attrs ? `atrrs:${JSON.stringify(attrs)}` : ''
+    const { attrs, events, directives } = element
+    const dirModel = directives.filter(dir => dir.name == 'model')[0]
+
+    const attrStr = (() => {
+        let res = 'attrs: {'
+        if(attrs) {
+            res += `${JSON.stringify(attrs).slice(1, -1)},`
+        }
+        if(dirModel) {
+            res += `value: '${wm[dirModel.value]}',`
+        }
+        res = res.slice(0, -1) + '}'
+        return res
+    })()
 
     const eventStr = (() => {
-        if(events && Object.keys(events).length) {
+        if(events && Object.keys(events).length || dirModel) {
             let res = ',on:{'
             Object.keys(events).forEach(key => {
                 res += `'${key}': _f('${events[key]}'),`
             })
+
+            if(dirModel) {
+                res += `input: function($event){${dirModel.value} = $event.target.value},`
+            }
             res = res.slice(0, -1) + '}'
             return res
         }
