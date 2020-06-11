@@ -2,7 +2,7 @@ import Watcher from './watcher'
 
 import state from './state'
 import lifecycle from './lifecycle'
-import compile from './compile'
+import compile from './compiler/compile'
 import mount from './mount.js'
 
 class Wue {
