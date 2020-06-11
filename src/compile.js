@@ -1,11 +1,14 @@
+import Watcher from './watcher'
 const htmlparser2 = require("htmlparser2");
 const h = require('snabbdom/h').default;
 
 const onRE = /^w-on:|^@/
 const wueAttrRE = /^w-([^:]+)(?:$|:(.*)$)/
+let wm = null
 
 export default function(Wue) {
     Wue.prototype._compile = function(el, options) {
+        wm = this
         const template = getTemplate(el)
         const ast = parse(template, options)
         console.log(ast)
@@ -19,6 +22,13 @@ export default function(Wue) {
 
     Wue.prototype._h = h
 
+    Wue.prototype._e = function(expression) {
+        return this[expression]
+    }
+
+    Wue.prototype._f = function(func) {
+        return this[func].bind(this)
+    }
 }
 
 const getTemplate = (el) => {
@@ -39,7 +49,7 @@ const parse = (template, options) => {
             onopentag(name, attrs) {
                 level++
                 const directives = []
-                const events = []
+                const events = {}
 
                 // attrs只放置非指令
                 const filteredAttr = Object.keys(attrs).filter(key => !wueAttrRE.test(key)).reduce((res, cur) => {
@@ -55,7 +65,7 @@ const parse = (template, options) => {
                         const arg = key.split(':')[1]
 
                         if(onRE.test(key)) {
-                            events.push({ [type]: value })
+                            events[arg] = value
                         } else {
                             directives.push({
                                 rawName: key,
@@ -93,6 +103,10 @@ const parse = (template, options) => {
                     text,
                     children: []
                 }
+                // 处理{name}这种取值
+                if(/^\{.*\}$/.test(text)) {
+                    current.expression = text.slice(1, -1)
+                }
 
                 let parent = arr[level - 1]
                 if(parent) {
@@ -113,18 +127,52 @@ const parse = (template, options) => {
 }
 
 const generate = (ast) => {
-    return `with(this){${generateElements(ast)}}`
+    return `with(this){return ${generateElements(ast)}}`
 }
 
 const generateElements = (elements) => {
-    return elements.map(ele => {
+    // 过滤掉空白
+    return elements.filter(ele => !(ele.tag == 'text' && /^\s*$/.test(ele.text))).map(ele => {
+        // 插值表达式
+        if(ele.tag == 'text' && ele.expression !== undefined) {
+            // 异步的方式添加watcher
+            Promise.resolve().then(() => {
+                new Watcher(
+                    wm,
+                    ele.expression,
+                    wm._mount
+                )
+            })
+            return `_e('${ele.expression.trim()}')`
+        }
+
+        // 普通文本
+        if(ele.tag == 'text') {
+            return `"${ele.text}"`
+        }
+
+        // 其他非文本的节点
         return `_h("${ele.tag}",${generateAttr(ele)},[${generateChildren(ele)}])`
     }).join(',')
 }
 
 const generateAttr = (element) => {
-    const attrs = element.attrs
-    return `{"attrs":${attrs ? JSON.stringify(attrs) : '{}'}}`
+    const { attrs, events } = element
+    const attrStr = attrs ? `atrrs:${JSON.stringify(attrs)}` : ''
+
+    const eventStr = (() => {
+        if(events && Object.keys(events).length) {
+            let res = ',on:{'
+            Object.keys(events).forEach(key => {
+                res += `'${key}': _f('${events[key]}'),`
+            })
+            res = res.slice(0, -1) + '}'
+            return res
+        }
+        return ''
+    })()
+
+    return `{${attrStr}${eventStr}}`
 }
 
 const generateChildren = (element) => {

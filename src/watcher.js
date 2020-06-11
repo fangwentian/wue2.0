@@ -35,7 +35,7 @@ export default class Watcher {
 
     update() {
         const oldValue = this.value
-        const newValue = this.get()
+        const newValue = this.wm[this.expression]
         if(oldValue !== newValue) {
             this.cb.call(this.wm, newValue, oldValue)
             this.value = newValue

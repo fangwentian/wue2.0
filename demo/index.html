@@ -7,14 +7,14 @@
         <div id="app">
             <div>
                 <input type="text" w-model="name" />
-                <span w-text="name"></span>
-                hello world
+                <span>{name}</span>
             </div>
             <div>
                 <button w-on:click="increase">+</button>
-                <span w-text="number"></span>
+                <span>{number}</span>
             </div>
         </div>
+        <div id="container"></div>
     </body>
     <script src="./index.js"></script>
 </html>

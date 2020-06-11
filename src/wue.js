@@ -1,12 +1,14 @@
-import toVnode from 'snabbdom/tovnode'
+import Watcher from './watcher'
 
 import state from './state'
 import lifecycle from './lifecycle'
 import compile from './compile'
+import mount from './mount.js'
 
 class Wue {
     constructor(options = {}) {
         this._directives = []
+        this._vnode = null
         const valid = this.check(options)
         if(valid) {
             this.init(options)
@@ -26,8 +28,6 @@ class Wue {
     init(options) {
         this.$options = options
         const el = this.el = document.querySelector(options.el)
-        const vnode = toVnode(el)
-        console.log(vnode, 'vnode')
 
         this.mergeMethods(options)
 
@@ -35,7 +35,9 @@ class Wue {
         this._initState(options)
 
         // from compile.js
-        this._compile(el, options)
+        this.renderFn = this._compile(el, options)
+
+        this._mount()
     }
 
     mergeMethods(options) {
@@ -49,5 +51,6 @@ class Wue {
 state(Wue)
 lifecycle(Wue)
 compile(Wue)
+mount(Wue)
 
 export default Wue
