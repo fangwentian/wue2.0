@@ -16,13 +16,13 @@ export default class Watcher {
     // 计算expression, 设置Dep.target
     get() {
         Dep.target = this
-        const value = this.wm[this.expression]
+        const value = this.calc(this.expression)
         Dep.target = null
         return value
     }
 
-    set(value) {
-        this.wm[this.expression] = value
+    calc(expression) {
+        return new Function(`with(this){return ${expression}}`).call(this.wm)
     }
 
     addDep(dep) {
@@ -35,7 +35,7 @@ export default class Watcher {
 
     update() {
         const oldValue = this.value
-        const newValue = this.wm[this.expression]
+        const newValue = this.calc(this.expression)
         if(oldValue !== newValue) {
             this.cb.call(this.wm, newValue, oldValue)
             this.value = newValue

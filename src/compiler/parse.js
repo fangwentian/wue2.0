@@ -66,7 +66,7 @@ export default function parse (template) {
                     text,
                     children: []
                 }
-                // 处理{name}这种取值
+                // 处理插值
                 if(/^\{.*\}$/.test(text)) {
                     current.expression = text.slice(1, -1)
                 }

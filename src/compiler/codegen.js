@@ -4,12 +4,8 @@ let wm = null
 
 export default function codegen (ast, Wue, _wm) {
     wm = _wm
-
+    
     Wue.prototype._h = h
-
-    Wue.prototype._e = function(expression) {
-        return this[expression]
-    }
 
     Wue.prototype._f = function(func) {
         return this[func].bind(this)
@@ -23,6 +19,7 @@ const generateElements = (elements) => {
     return elements.filter(ele => !(ele.tag == 'text' && /^\s*$/.test(ele.text))).map(ele => {
         // 插值表达式
         if(ele.tag == 'text' && ele.expression !== undefined) {
+            console.log(ele.expression)
             // 异步的方式添加watcher
             Promise.resolve().then(() => {
                 new Watcher(
@@ -31,7 +28,7 @@ const generateElements = (elements) => {
                     wm._mount
                 )
             })
-            return `_e('${ele.expression.trim()}')`
+            return ele.expression.trim()
         }
 
         // 普通文本

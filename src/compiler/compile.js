@@ -3,7 +3,7 @@ import codegen from './codegen'
 
 export default function(Wue) {
     Wue.prototype._compile = function(el, options) {
-        const template = getTemplate(el)
+        const template = options.template || getTemplate(el)
         console.log(template)
 
         const ast = parse(template)
