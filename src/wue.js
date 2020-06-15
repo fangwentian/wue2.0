@@ -1,5 +1,3 @@
-import Watcher from './watcher'
-
 import state from './state'
 import lifecycle from './lifecycle'
 import compile from './compiler/compile'
@@ -7,7 +5,6 @@ import mount from './mount.js'
 
 class Wue {
     constructor(options = {}) {
-        this._directives = []
         this._vnode = null
         const valid = this.check(options)
         if(valid) {

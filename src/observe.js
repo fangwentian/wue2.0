@@ -19,6 +19,7 @@ class Observer {
 
     defineReactive(obj, key, value) {
         const dep = new Dep()
+
         Object.defineProperty(obj, key, {
             enumerable: true,
             configurable: true,
