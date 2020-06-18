@@ -14,9 +14,11 @@ new Wue({
         <span>{'number:' + 2 * number}</span>
     </div>
 </div>`,
-    data: {
-        name: 'basketball',
-        number: 0
+    data() {
+        return {
+            name: 'basketball',
+            number: 0
+        }
     },
     methods: {
         increase() {

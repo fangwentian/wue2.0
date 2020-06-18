@@ -19,7 +19,6 @@ const generateElements = (elements) => {
     return elements.filter(ele => !(ele.tag == 'text' && /^\s*$/.test(ele.text))).map(ele => {
         // 插值表达式
         if(ele.tag == 'text' && ele.expression !== undefined) {
-            console.log(ele.expression)
             // 异步的方式添加watcher
             Promise.resolve().then(() => {
                 new Watcher(

@@ -7,10 +7,10 @@ export default function(Wue) {
         console.log(template)
 
         const ast = parse(template)
-        console.log(ast)
+        console.log(ast, 'ast')
 
         const code = codegen(ast, Wue, this)
-        console.log(code)
+        console.log(code, 'code')
 
         const renderFn = getFunction(code)
         return renderFn

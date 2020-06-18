@@ -1,5 +1,4 @@
 import state from './state'
-import lifecycle from './lifecycle'
 import compile from './compiler/compile'
 import mount from './mount.js'
 
@@ -46,7 +45,6 @@ class Wue {
 }
 
 state(Wue)
-lifecycle(Wue)
 compile(Wue)
 mount(Wue)
 
